@@ -1,0 +1,456 @@
+{
+  "notificationLevel": "",
+  "workflowDefinition": {
+    "sfal_account_history_filter": {
+      "action": "filter",
+      "parameters": {
+        "source": "sfal_account_history",
+        "saqlFilter": "'Field' in [\"Type\"]"
+      }
+    },
+    "sfal_clean_dataset": {
+      "action": "sliceDataset",
+      "parameters": {
+        "mode": "drop",
+        "source": "sfal_filter_row_summary_line_only",
+        "fields": [
+          {"name": "AccountId"},
+          {"name": "CaseId"},
+          {"name": "OpportunityId"},
+          {"name": "OldValue"},
+          {"name": "NewValue"}
+        ]
+      }
+    },
+    "sfal_opportunity_history": {
+      "action": "sfdcDigest",
+      "parameters": {
+        "fields": [
+          {"name": "Field"},
+          {"name": "OldValue"},
+          {"name": "NewValue"},
+          {"name": "OpportunityId"},
+          {"name": "CreatedDate"},
+          {"name": "Id"}
+        ],
+        "object": "OpportunityFieldHistory"
+      }
+    },
+    "sfal_null_value_replace": {
+      "action": "computeExpression",
+      "parameters": {
+        "source": "sfal_join_sources",
+        "mergeWithSource": true,
+        "computedFields": [
+          {
+            "defaultValue": "0",
+            "precision": 16,
+            "name": "created_date_day_epoch",
+            "saqlExpression": "'CreatedDate_day_epoch'",
+            "scale": 2,
+            "label": "created_date_day_epoch",
+            "type": "Numeric"
+          },
+          {
+            "defaultValue": "0",
+            "precision": 16,
+            "name": "now_date_to_create_date_epoch_days",
+            "saqlExpression": "daysBetween(toDate('CreatedDate_sec_epoch'), now() )",
+            "scale": 2,
+            "label": "now_date_to_create_date_epoch_days",
+            "type": "Numeric"
+          },
+          {
+            "name": "now_date_to_create_date_epoch_days_as_string",
+            "saqlExpression": "case when daysBetween(toDate('CreatedDate_sec_epoch'), now()) == 0 then \"[0d]\" else\n\n\" [\" + \nnumber_to_string(daysBetween(toDate('CreatedDate_sec_epoch'), now()), \"####\") + \"d]\"\n\nend",
+            "label": "now_date_to_create_date_epoch_days_as_string",
+            "type": "Text"
+          }
+        ]
+      }
+    },
+    "sfal_generate_row_history_lines": {
+      "action": "computeExpression",
+      "parameters": {
+        "source": "sfal_generate_row_history",
+        "mergeWithSource": true,
+        "computedFields": [
+          {
+            "saqlExpression": "case when 'OldValue' is null then \"None\" else 'OldValue' end",
+            "name": "OldValues",
+            "label": "OldValues",
+            "type": "Text"
+          },
+          {
+            "saqlExpression": "case when 'NewValue' is null then \"None\" else 'NewValue' end",
+            "name": "NewValues",
+            "label": "NewValues",
+            "type": "Text"
+          },
+          {
+            "name": "days_in_state_as_string",
+            "saqlExpression": "case when 'days_in_state' == 0 then \"[0d]\" else \n\" [\" + number_to_string('days_in_state',\"####\") + \"d]\" end",
+            "label": "days_in_state_as_string",
+            "type": "Text"
+          }
+        ]
+      }
+    },
+    "sfal_opportunity_field_history_filter": {
+      "action": "filter",
+      "parameters": {
+        "source": "sfal_opportunity_field_history",
+        "saqlFilter": "'Field' in [\"StageName\",\"ForecastCategoryName\"]"
+      }
+    },
+    "sfal_join_sources": {
+      "action": "append",
+      "parameters": {
+        "enableDisjointedSchemaMerge": true,
+        "sources": [
+          "sfal_account_history_calc",
+          "sfal_case_history_calc",
+          "sfal_opportunity_history_calc",
+          "sfal_opportunity_field_history_calc"
+        ]
+      }
+    },
+    "sfal_case_history_calc": {
+      "action": "computeExpression",
+      "parameters": {
+        "source": "sfal_case_history_filter",
+        "mergeWithSource": true,
+        "computedFields": [
+          {
+            "name": "parent_id",
+            "saqlExpression": "'CaseId'",
+            "label": "parent_id",
+            "type": "Text"
+          },
+          {
+            "name": "field_type_name",
+            "saqlExpression": "'Field'",
+            "label": "field_type_name",
+            "type": "Text"
+          },
+          {
+            "name": "source",
+            "saqlExpression": "case\nwhen substr('parent_id', 1, 3) == \"001\" then \"Account\"\nwhen substr('parent_id', 1, 3) == \"002\" then \"Note\"\nwhen substr('parent_id', 1, 3) == \"003\" then \"Contact\"\nwhen substr('parent_id', 1, 3) == \"005\" then \"User\"\nwhen substr('parent_id', 1, 3) == \"006\" then \"Opportunity\"\nwhen substr('parent_id', 1, 3) == \"008\" then \"OpportunityHistory\"\nwhen substr('parent_id', 1, 3) == \"100\" then \"UserLicense\"\nwhen substr('parent_id', 1, 3) == \"101\" then \"Custom Label\"\nwhen substr('parent_id', 1, 3) == \"400\" then \"ApexClassMember\"\nwhen substr('parent_id', 1, 3) == \"500\" then \"Case\"\nwhen substr('parent_id', 1, 3) == \"501\" then \"Solution\"\nwhen substr('parent_id', 1, 3) == \"608\" then \"ForecastShare\"\nwhen substr('parent_id', 1, 3) == \"701\" then \"Campaign\"\nwhen substr('parent_id', 1, 3) == \"707\" then \"AsyncApexJob\"\nwhen substr('parent_id', 1, 3) == \"709\" then \"ApexTestQueueItem\"\nwhen substr('parent_id', 1, 3) == \"750\" then \"Bulk Query Job\"\nwhen substr('parent_id', 1, 3) == \"751\" then \"Bulk Query Batch\"\nwhen substr('parent_id', 1, 3) == \"752\" then \"Bulk Query Result\"\nwhen substr('parent_id', 1, 3) == \"800\" then \"Contract\"\nwhen substr('parent_id', 1, 3) == \"806\" then \"Approval\"\nwhen substr('parent_id', 1, 3) == \"888\" then \"Remote Access\"\nwhen substr('parent_id', 1, 3) == \"000\" then \"Empty Key\"\nwhen substr('parent_id', 1, 3) == \"00a\" then \"CaseComment/IdeaComment\"\nwhen substr('parent_id', 1, 3) == \"00b\" then \"WebLink\"\nwhen substr('parent_id', 1, 3) == \"00B\" then \"View\"\nwhen substr('parent_id', 1, 3) == \"00D\" then \"Organization\"\nwhen substr('parent_id', 1, 3) == \"00e\" then \"Profile\"\nwhen substr('parent_id', 1, 3) == \"00E\" then \"UserRole\"\nwhen substr('parent_id', 1, 3) == \"00G\" then \"Group\"\nwhen substr('parent_id', 1, 3) == \"00h\" then \"Page Layout\"\nwhen substr('parent_id', 1, 3) == \"00I\" then \"Partner\"\nwhen substr('parent_id', 1, 3) == \"00J\" then \"OpportunityCompetitor\"\nwhen substr('parent_id', 1, 3) == \"00K\" then \"OpportunityContactRole\"\nwhen substr('parent_id', 1, 3) == \"00k\" then \"OpportunityLineItem\"\nwhen substr('parent_id', 1, 3) == \"00l\" then \"Folder\"\nwhen substr('parent_id', 1, 3) == \"00N\" then \"Custom Field Definition\"\nwhen substr('parent_id', 1, 3) == \"00o\" then \"OpportunityLineItemSchedule\"\nwhen substr('parent_id', 1, 3) == \"00O\" then \"Report\"\nwhen substr('parent_id', 1, 3) == \"00P\" then \"Attachment\"\nwhen substr('parent_id', 1, 3) == \"00p\" then \"UserTeamMember\"\nwhen substr('parent_id', 1, 3) == \"00Q\" then \"Lead\"\nwhen substr('parent_id', 1, 3) == \"00q\" then \"OpportunityTeamMember \"\nwhen substr('parent_id', 1, 3) == \"00r\" then \"AccountShare\"\nwhen substr('parent_id', 1, 3) == \"00S\" then \"Import Queue\"\nwhen substr('parent_id', 1, 3) == \"00t\" then \"OpportunityShare\"\nwhen substr('parent_id', 1, 3) == \"00T\" then \"Task\"\nwhen substr('parent_id', 1, 3) == \"00U\" then \"Event\"\nwhen substr('parent_id', 1, 3) == \"00v\" then \"CampaignMember\"\nwhen substr('parent_id', 1, 3) == \"00X\" then \"EmailTemplate\"\nwhen substr('parent_id', 1, 3) == \"010\" then \"CaseSolution\"\nwhen substr('parent_id', 1, 3) == \"011\" then \"GroupMember\"\nwhen substr('parent_id', 1, 3) == \"012\" then \"RecordType\"\nwhen substr('parent_id', 1, 3) == \"015\" then \"Document\"\nwhen substr('parent_id', 1, 3) == \"016\" then \"BrandTemplate (Letterhead)\"\nwhen substr('parent_id', 1, 3) == \"018\" then \"EmailStatus\"\nwhen substr('parent_id', 1, 3) == \"019\" then \"BusinessProcess\"\nwhen substr('parent_id', 1, 3) == \"01a\" then \"DashboardComponent\"\nwhen substr('parent_id', 1, 3) == \"01D\" then \"UserAccountTeamMember\"\nwhen substr('parent_id', 1, 3) == \"01H\" then \"MailmergeTemplate\"\nwhen substr('parent_id', 1, 3) == \"01I\" then \"Custom Object\"\nwhen substr('parent_id', 1, 3) == \"01m\" then \"BusinessHours\"\nwhen substr('parent_id', 1, 3) == \"01M\" then \"AccountTeamMember\"\nwhen substr('parent_id', 1, 3) == \"01n\" then \"CaseShare\"\nwhen substr('parent_id', 1, 3) == \"01N\" then \"Scontrol\"\nwhen substr('parent_id', 1, 3) == \"01o\" then \"LeadShare\"\nwhen substr('parent_id', 1, 3) == \"01p\" then \"ApexClass\"\nwhen substr('parent_id', 1, 3) == \"01q\" then \"ApexTrigger\"\nwhen substr('parent_id', 1, 3) == \"01Q\" then \"AssignmentRule\"\nwhen substr('parent_id', 1, 3) == \"01Q\" then \"Workflow Rule\"\nwhen substr('parent_id', 1, 3) == \"01r\" then \"Visualforce Tab\"\nwhen substr('parent_id', 1, 3) == \"01s\" then \"Pricebook2\"\nwhen substr('parent_id', 1, 3) == \"01t\" then \"Product2\"\nwhen substr('parent_id', 1, 3) == \"01u\" then \"PricebookEntry\"\nwhen substr('parent_id', 1, 3) == \"01Y\" then \"CampaignMemberStatus\"\nwhen substr('parent_id', 1, 3) == \"01Z\" then \"Dashboard\"\nwhen substr('parent_id', 1, 3) == \"020\" then \"EventAttendee\"\nwhen substr('parent_id', 1, 3) == \"021\" then \"QuantityForecast\"\nwhen substr('parent_id', 1, 3) == \"022\" then \"FiscalYearSettings\"\nwhen substr('parent_id', 1, 3) == \"026\" then \"Period\"\nwhen substr('parent_id', 1, 3) == \"027\" then \"RevenueForecast\"\nwhen substr('parent_id', 1, 3) == \"028\" then \"OpportunityOverride\"\nwhen substr('parent_id', 1, 3) == \"029\" then \"LineitemOverride\"\nwhen substr('parent_id', 1, 3) == \"02a\" then \"ContractContactRole\"\nwhen substr('parent_id', 1, 3) == \"02c\" then \"Sharing Rule\"\nwhen substr('parent_id', 1, 3) == \"02i\" then \"Asset\"\nwhen substr('parent_id', 1, 3) == \"02n\" then \"CategoryNode\"\nwhen substr('parent_id', 1, 3) == \"02o\" then \"CategoryData\"\nwhen substr('parent_id', 1, 3) == \"02s\" then \"EmailMessage\"\nwhen substr('parent_id', 1, 3) == \"02Z\" then \"AccountContactRole\"\nwhen substr('parent_id', 1, 3) == \"033\" then \"Package\"\nwhen substr('parent_id', 1, 3) == \"035\" then \"SelfServiceUser\"\nwhen substr('parent_id', 1, 3) == \"03d\" then \"Validation Rule\"\nwhen substr('parent_id', 1, 3) == \"03g\" then \"QueueSobject\"\nwhen substr('parent_id', 1, 3) == \"03j\" then \"CaseContactRole\"\nwhen substr('parent_id', 1, 3) == \"03s\" then \"ContactShare\"\nwhen substr('parent_id', 1, 3) == \"03u\" then \"UserPreference\"\nwhen substr('parent_id', 1, 3) == \"04g\" then \"ProcessInstance\"\nwhen substr('parent_id', 1, 3) == \"04h\" then \"ProcessInstanceStep\"\nwhen substr('parent_id', 1, 3) == \"04i\" then \"ProcessInstanceWorkitem\"\nwhen substr('parent_id', 1, 3) == \"04k\" then \"Outbound Message Id\"\nwhen substr('parent_id', 1, 3) == \"04l\" then \"Outbound Notification Id\"\nwhen substr('parent_id', 1, 3) == \"04m\" then \"AdditionalNumber\"\nwhen substr('parent_id', 1, 3) == \"04s\" then \"AsyncResult/DeployResult\"\nwhen substr('parent_id', 1, 3) == \"04t\" then \"Install Package\"\nwhen substr('parent_id', 1, 3) == \"04v\" then \"CallCenter\"\nwhen substr('parent_id', 1, 3) == \"04W\" then \"RevenueForecastHistory\"\nwhen substr('parent_id', 1, 3) == \"04X\" then \"QuantityForecastHistory\"\nwhen substr('parent_id', 1, 3) == \"04Y\" then \"Field Update\"\nwhen substr('parent_id', 1, 3) == \"058\" then \"ContentWorkspace\"\nwhen substr('parent_id', 1, 3) == \"059\" then \"ContentWorkspaceDoc\"\nwhen substr('parent_id', 1, 3) == \"05X\" then \"DocumentAttachmentMap\"\nwhen substr('parent_id', 1, 3) == \"060\" then \"Portal Id\"\nwhen substr('parent_id', 1, 3) == \"066\" then \"ApexPage\"\nwhen substr('parent_id', 1, 3) == \"068\" then \"ContentVersion\"\nwhen substr('parent_id', 1, 3) == \"069\" then \"ContentDocument\"\nwhen substr('parent_id', 1, 3) == \"07E\" then \"Sandbox\"\nwhen substr('parent_id', 1, 3) == \"07L\" then \"ApexLog\"\nwhen substr('parent_id', 1, 3) == \"07M\" then \"ApexTestResult\"\nwhen substr('parent_id', 1, 3) == \"07M\" then \"Apex Test Result\"\nwhen substr('parent_id', 1, 3) == \"081\" then \"StaticResource\"\nwhen substr('parent_id', 1, 3) == \"082\" then \"Data from Uninstalled Packages\"\nwhen substr('parent_id', 1, 3) == \"083\" then \"Vote\"\nwhen substr('parent_id', 1, 3) == \"087\" then \"Idea\"\nwhen substr('parent_id', 1, 3) == \"08e\" then \"CronTrigger\"\nwhen substr('parent_id', 1, 3) == \"08s\" then \"CampaignShare\"\nwhen substr('parent_id', 1, 3) == \"091\" then \"EmailServicesFunction\"\nwhen substr('parent_id', 1, 3) == \"092\" then \"Weekly Data Export\"\nwhen substr('parent_id', 1, 3) == \"093\" then \"EmailServicesAddress\"\nwhen substr('parent_id', 1, 3) == \"099\" then \"ApexComponent\"\nwhen substr('parent_id', 1, 3) == \"09a\" then \"Community\"\nwhen substr('parent_id', 1, 3) == \"0A2\" then \"Change Set\"\nwhen substr('parent_id', 1, 3) == \"0A3\" then \"Installed Package\"\nwhen substr('parent_id', 1, 3) == \"0BM\" then \"Connection - Salesforce to Salesforce\"\nwhen substr('parent_id', 1, 3) == \"0C0\" then \"Holiday\"\nwhen substr('parent_id', 1, 3) == \"0D2\" then \"OrgWideEmailAddress\"\nwhen substr('parent_id', 1, 3) == \"0D5\" then \"UserProfileFeed\"\nwhen substr('parent_id', 1, 3) == \"0D5\" then \"FeedItem/NewsFeed/UserProfileFeed\"\nwhen substr('parent_id', 1, 3) == \"0DM\" then \"Site\"\nwhen substr('parent_id', 1, 3) == \"000\" then \"EntitySubscription\"\nwhen substr('parent_id', 1, 3) == \"0EP\" then \"Inbound Change Set\"\nwhen substr('parent_id', 1, 3) == \"0J0\" then \"SetupEntityAccess\"\nwhen substr('parent_id', 1, 3) == \"0PS\" then \"Permission Set Metadata\"\nwhen substr('parent_id', 1, 3) == \"0Q0\" then \"Quote\"\nwhen substr('parent_id', 1, 3) == \"0t0\" then \"TagDefinition\"\nwhen substr('parent_id', 1, 3) == \"0Ya\" then \"LoginHistory\"\nwhen substr('parent_id', 1, 3) == \"1dc\" then \"MetadataContainer\"\nwhen substr('parent_id', 1, 3) == \"1dr\" then \"ContainerAsyncRequest\"\nwhen substr('parent_id', 1, 3) == \"7tf\" then \"TraceFlag\"\nelse\n\"Insert a new ID into Types\"\nend",
+            "label": "source",
+            "type": "Text"
+          },
+          {
+            "name": "partition",
+            "saqlExpression": "'source' + 'parent_id' + 'field_type_name'",
+            "label": "partition",
+            "type": "Text"
+          }
+        ]
+      }
+    },
+    "sfal_account_history": {
+      "action": "sfdcDigest",
+      "parameters": {
+        "fields": [
+          {"name": "AccountId"},
+          {"name": "CreatedDate"},
+          {"name": "Field"},
+          {"name": "NewValue"},
+          {"name": "OldValue"},
+          {"name": "Id"}
+        ],
+        "object": "AccountHistory"
+      }
+    },
+    "sfal_register": {
+      "action": "sfdcRegister",
+      "parameters": {
+        "name": "Salesforce_Activity_Lifecycle",
+        "alias": "${App.Datasets.Salesforce_Activity_Lifecycle_tp.FullyQualifiedName}",
+        "source": "sfal_clean_dataset"
+      }
+    },
+    "sfal_generate_row_history_intermediate": {
+      "action": "computeRelative",
+      "parameters": {
+        "partitionBy": ["partition"],
+        "orderBy": [{
+          "name": "CreatedDate",
+          "direction": "asc"
+        }],
+        "source": "sfal_generate_row_history_lines",
+        "computedFields": [
+          {
+            "expression": {
+              "default": "FALSE",
+              "saqlExpression": "case when previous('TypeHistory') is null then 'OldValues' + \" > \" + 'NewValues' else previous('TypeHistory') + \" > \" + 'NewValues' end",
+              "type": "Text"
+            },
+            "name": "TypeHistory",
+            "label": "TypeHistory"
+          },
+          {
+            "expression": {
+              "saqlExpression": "case when previous('sfal_short_description') is null then 'OldValues' + \" > \" + 'NewValues' + 'days_in_state_as_string'\n\nelse previous('sfal_short_description') + \" > \" + 'NewValues' + 'days_in_state_as_string' end",
+              "type": "Text"
+            },
+            "name": "sfal_short_description",
+            "label": "sfal_short_description"
+          },
+          {
+            "expression": {
+              "default": "FALSE",
+              "saqlExpression": "case when previous('sfal_long_description') is null then 'OldValues' + \" > \" + 'NewValues' else previous('sfal_long_description') + \" > \" + 'NewValues' end",
+              "type": "Text"
+            },
+            "name": "sfal_long_description",
+            "label": "sfal_long_description"
+          }
+        ]
+      }
+    },
+    "sfal_case_history": {
+      "action": "sfdcDigest",
+      "parameters": {
+        "fields": [
+          {"name": "CaseId"},
+          {"name": "CreatedDate"},
+          {"name": "Field"},
+          {"name": "Id"},
+          {"name": "NewValue"},
+          {"name": "OldValue"}
+        ],
+        "object": "CaseHistory"
+      }
+    },
+    "sfal_opportunity_history_calc": {
+      "action": "computeExpression",
+      "parameters": {
+        "source": "sfal_opportunity_history_filter",
+        "mergeWithSource": true,
+        "computedFields": [
+          {
+            "name": "parent_id",
+            "saqlExpression": "'OpportunityId'",
+            "label": "parent_id",
+            "type": "Text"
+          },
+          {
+            "name": "field_type_name",
+            "saqlExpression": "'Field'",
+            "label": "field_type_name",
+            "type": "Text"
+          },
+          {
+            "name": "source",
+            "saqlExpression": "case\nwhen substr('parent_id', 1, 3) == \"001\" then \"Account\"\nwhen substr('parent_id', 1, 3) == \"002\" then \"Note\"\nwhen substr('parent_id', 1, 3) == \"003\" then \"Contact\"\nwhen substr('parent_id', 1, 3) == \"005\" then \"User\"\nwhen substr('parent_id', 1, 3) == \"006\" then \"Opportunity\"\nwhen substr('parent_id', 1, 3) == \"008\" then \"OpportunityHistory\"\nwhen substr('parent_id', 1, 3) == \"100\" then \"UserLicense\"\nwhen substr('parent_id', 1, 3) == \"101\" then \"Custom Label\"\nwhen substr('parent_id', 1, 3) == \"400\" then \"ApexClassMember\"\nwhen substr('parent_id', 1, 3) == \"500\" then \"Case\"\nwhen substr('parent_id', 1, 3) == \"501\" then \"Solution\"\nwhen substr('parent_id', 1, 3) == \"608\" then \"ForecastShare\"\nwhen substr('parent_id', 1, 3) == \"701\" then \"Campaign\"\nwhen substr('parent_id', 1, 3) == \"707\" then \"AsyncApexJob\"\nwhen substr('parent_id', 1, 3) == \"709\" then \"ApexTestQueueItem\"\nwhen substr('parent_id', 1, 3) == \"750\" then \"Bulk Query Job\"\nwhen substr('parent_id', 1, 3) == \"751\" then \"Bulk Query Batch\"\nwhen substr('parent_id', 1, 3) == \"752\" then \"Bulk Query Result\"\nwhen substr('parent_id', 1, 3) == \"800\" then \"Contract\"\nwhen substr('parent_id', 1, 3) == \"806\" then \"Approval\"\nwhen substr('parent_id', 1, 3) == \"888\" then \"Remote Access\"\nwhen substr('parent_id', 1, 3) == \"000\" then \"Empty Key\"\nwhen substr('parent_id', 1, 3) == \"00a\" then \"CaseComment/IdeaComment\"\nwhen substr('parent_id', 1, 3) == \"00b\" then \"WebLink\"\nwhen substr('parent_id', 1, 3) == \"00B\" then \"View\"\nwhen substr('parent_id', 1, 3) == \"00D\" then \"Organization\"\nwhen substr('parent_id', 1, 3) == \"00e\" then \"Profile\"\nwhen substr('parent_id', 1, 3) == \"00E\" then \"UserRole\"\nwhen substr('parent_id', 1, 3) == \"00G\" then \"Group\"\nwhen substr('parent_id', 1, 3) == \"00h\" then \"Page Layout\"\nwhen substr('parent_id', 1, 3) == \"00I\" then \"Partner\"\nwhen substr('parent_id', 1, 3) == \"00J\" then \"OpportunityCompetitor\"\nwhen substr('parent_id', 1, 3) == \"00K\" then \"OpportunityContactRole\"\nwhen substr('parent_id', 1, 3) == \"00k\" then \"OpportunityLineItem\"\nwhen substr('parent_id', 1, 3) == \"00l\" then \"Folder\"\nwhen substr('parent_id', 1, 3) == \"00N\" then \"Custom Field Definition\"\nwhen substr('parent_id', 1, 3) == \"00o\" then \"OpportunityLineItemSchedule\"\nwhen substr('parent_id', 1, 3) == \"00O\" then \"Report\"\nwhen substr('parent_id', 1, 3) == \"00P\" then \"Attachment\"\nwhen substr('parent_id', 1, 3) == \"00p\" then \"UserTeamMember\"\nwhen substr('parent_id', 1, 3) == \"00Q\" then \"Lead\"\nwhen substr('parent_id', 1, 3) == \"00q\" then \"OpportunityTeamMember \"\nwhen substr('parent_id', 1, 3) == \"00r\" then \"AccountShare\"\nwhen substr('parent_id', 1, 3) == \"00S\" then \"Import Queue\"\nwhen substr('parent_id', 1, 3) == \"00t\" then \"OpportunityShare\"\nwhen substr('parent_id', 1, 3) == \"00T\" then \"Task\"\nwhen substr('parent_id', 1, 3) == \"00U\" then \"Event\"\nwhen substr('parent_id', 1, 3) == \"00v\" then \"CampaignMember\"\nwhen substr('parent_id', 1, 3) == \"00X\" then \"EmailTemplate\"\nwhen substr('parent_id', 1, 3) == \"010\" then \"CaseSolution\"\nwhen substr('parent_id', 1, 3) == \"011\" then \"GroupMember\"\nwhen substr('parent_id', 1, 3) == \"012\" then \"RecordType\"\nwhen substr('parent_id', 1, 3) == \"015\" then \"Document\"\nwhen substr('parent_id', 1, 3) == \"016\" then \"BrandTemplate (Letterhead)\"\nwhen substr('parent_id', 1, 3) == \"018\" then \"EmailStatus\"\nwhen substr('parent_id', 1, 3) == \"019\" then \"BusinessProcess\"\nwhen substr('parent_id', 1, 3) == \"01a\" then \"DashboardComponent\"\nwhen substr('parent_id', 1, 3) == \"01D\" then \"UserAccountTeamMember\"\nwhen substr('parent_id', 1, 3) == \"01H\" then \"MailmergeTemplate\"\nwhen substr('parent_id', 1, 3) == \"01I\" then \"Custom Object\"\nwhen substr('parent_id', 1, 3) == \"01m\" then \"BusinessHours\"\nwhen substr('parent_id', 1, 3) == \"01M\" then \"AccountTeamMember\"\nwhen substr('parent_id', 1, 3) == \"01n\" then \"CaseShare\"\nwhen substr('parent_id', 1, 3) == \"01N\" then \"Scontrol\"\nwhen substr('parent_id', 1, 3) == \"01o\" then \"LeadShare\"\nwhen substr('parent_id', 1, 3) == \"01p\" then \"ApexClass\"\nwhen substr('parent_id', 1, 3) == \"01q\" then \"ApexTrigger\"\nwhen substr('parent_id', 1, 3) == \"01Q\" then \"AssignmentRule\"\nwhen substr('parent_id', 1, 3) == \"01Q\" then \"Workflow Rule\"\nwhen substr('parent_id', 1, 3) == \"01r\" then \"Visualforce Tab\"\nwhen substr('parent_id', 1, 3) == \"01s\" then \"Pricebook2\"\nwhen substr('parent_id', 1, 3) == \"01t\" then \"Product2\"\nwhen substr('parent_id', 1, 3) == \"01u\" then \"PricebookEntry\"\nwhen substr('parent_id', 1, 3) == \"01Y\" then \"CampaignMemberStatus\"\nwhen substr('parent_id', 1, 3) == \"01Z\" then \"Dashboard\"\nwhen substr('parent_id', 1, 3) == \"020\" then \"EventAttendee\"\nwhen substr('parent_id', 1, 3) == \"021\" then \"QuantityForecast\"\nwhen substr('parent_id', 1, 3) == \"022\" then \"FiscalYearSettings\"\nwhen substr('parent_id', 1, 3) == \"026\" then \"Period\"\nwhen substr('parent_id', 1, 3) == \"027\" then \"RevenueForecast\"\nwhen substr('parent_id', 1, 3) == \"028\" then \"OpportunityOverride\"\nwhen substr('parent_id', 1, 3) == \"029\" then \"LineitemOverride\"\nwhen substr('parent_id', 1, 3) == \"02a\" then \"ContractContactRole\"\nwhen substr('parent_id', 1, 3) == \"02c\" then \"Sharing Rule\"\nwhen substr('parent_id', 1, 3) == \"02i\" then \"Asset\"\nwhen substr('parent_id', 1, 3) == \"02n\" then \"CategoryNode\"\nwhen substr('parent_id', 1, 3) == \"02o\" then \"CategoryData\"\nwhen substr('parent_id', 1, 3) == \"02s\" then \"EmailMessage\"\nwhen substr('parent_id', 1, 3) == \"02Z\" then \"AccountContactRole\"\nwhen substr('parent_id', 1, 3) == \"033\" then \"Package\"\nwhen substr('parent_id', 1, 3) == \"035\" then \"SelfServiceUser\"\nwhen substr('parent_id', 1, 3) == \"03d\" then \"Validation Rule\"\nwhen substr('parent_id', 1, 3) == \"03g\" then \"QueueSobject\"\nwhen substr('parent_id', 1, 3) == \"03j\" then \"CaseContactRole\"\nwhen substr('parent_id', 1, 3) == \"03s\" then \"ContactShare\"\nwhen substr('parent_id', 1, 3) == \"03u\" then \"UserPreference\"\nwhen substr('parent_id', 1, 3) == \"04g\" then \"ProcessInstance\"\nwhen substr('parent_id', 1, 3) == \"04h\" then \"ProcessInstanceStep\"\nwhen substr('parent_id', 1, 3) == \"04i\" then \"ProcessInstanceWorkitem\"\nwhen substr('parent_id', 1, 3) == \"04k\" then \"Outbound Message Id\"\nwhen substr('parent_id', 1, 3) == \"04l\" then \"Outbound Notification Id\"\nwhen substr('parent_id', 1, 3) == \"04m\" then \"AdditionalNumber\"\nwhen substr('parent_id', 1, 3) == \"04s\" then \"AsyncResult/DeployResult\"\nwhen substr('parent_id', 1, 3) == \"04t\" then \"Install Package\"\nwhen substr('parent_id', 1, 3) == \"04v\" then \"CallCenter\"\nwhen substr('parent_id', 1, 3) == \"04W\" then \"RevenueForecastHistory\"\nwhen substr('parent_id', 1, 3) == \"04X\" then \"QuantityForecastHistory\"\nwhen substr('parent_id', 1, 3) == \"04Y\" then \"Field Update\"\nwhen substr('parent_id', 1, 3) == \"058\" then \"ContentWorkspace\"\nwhen substr('parent_id', 1, 3) == \"059\" then \"ContentWorkspaceDoc\"\nwhen substr('parent_id', 1, 3) == \"05X\" then \"DocumentAttachmentMap\"\nwhen substr('parent_id', 1, 3) == \"060\" then \"Portal Id\"\nwhen substr('parent_id', 1, 3) == \"066\" then \"ApexPage\"\nwhen substr('parent_id', 1, 3) == \"068\" then \"ContentVersion\"\nwhen substr('parent_id', 1, 3) == \"069\" then \"ContentDocument\"\nwhen substr('parent_id', 1, 3) == \"07E\" then \"Sandbox\"\nwhen substr('parent_id', 1, 3) == \"07L\" then \"ApexLog\"\nwhen substr('parent_id', 1, 3) == \"07M\" then \"ApexTestResult\"\nwhen substr('parent_id', 1, 3) == \"07M\" then \"Apex Test Result\"\nwhen substr('parent_id', 1, 3) == \"081\" then \"StaticResource\"\nwhen substr('parent_id', 1, 3) == \"082\" then \"Data from Uninstalled Packages\"\nwhen substr('parent_id', 1, 3) == \"083\" then \"Vote\"\nwhen substr('parent_id', 1, 3) == \"087\" then \"Idea\"\nwhen substr('parent_id', 1, 3) == \"08e\" then \"CronTrigger\"\nwhen substr('parent_id', 1, 3) == \"08s\" then \"CampaignShare\"\nwhen substr('parent_id', 1, 3) == \"091\" then \"EmailServicesFunction\"\nwhen substr('parent_id', 1, 3) == \"092\" then \"Weekly Data Export\"\nwhen substr('parent_id', 1, 3) == \"093\" then \"EmailServicesAddress\"\nwhen substr('parent_id', 1, 3) == \"099\" then \"ApexComponent\"\nwhen substr('parent_id', 1, 3) == \"09a\" then \"Community\"\nwhen substr('parent_id', 1, 3) == \"0A2\" then \"Change Set\"\nwhen substr('parent_id', 1, 3) == \"0A3\" then \"Installed Package\"\nwhen substr('parent_id', 1, 3) == \"0BM\" then \"Connection - Salesforce to Salesforce\"\nwhen substr('parent_id', 1, 3) == \"0C0\" then \"Holiday\"\nwhen substr('parent_id', 1, 3) == \"0D2\" then \"OrgWideEmailAddress\"\nwhen substr('parent_id', 1, 3) == \"0D5\" then \"UserProfileFeed\"\nwhen substr('parent_id', 1, 3) == \"0D5\" then \"FeedItem/NewsFeed/UserProfileFeed\"\nwhen substr('parent_id', 1, 3) == \"0DM\" then \"Site\"\nwhen substr('parent_id', 1, 3) == \"000\" then \"EntitySubscription\"\nwhen substr('parent_id', 1, 3) == \"0EP\" then \"Inbound Change Set\"\nwhen substr('parent_id', 1, 3) == \"0J0\" then \"SetupEntityAccess\"\nwhen substr('parent_id', 1, 3) == \"0PS\" then \"Permission Set Metadata\"\nwhen substr('parent_id', 1, 3) == \"0Q0\" then \"Quote\"\nwhen substr('parent_id', 1, 3) == \"0t0\" then \"TagDefinition\"\nwhen substr('parent_id', 1, 3) == \"0Ya\" then \"LoginHistory\"\nwhen substr('parent_id', 1, 3) == \"1dc\" then \"MetadataContainer\"\nwhen substr('parent_id', 1, 3) == \"1dr\" then \"ContainerAsyncRequest\"\nwhen substr('parent_id', 1, 3) == \"7tf\" then \"TraceFlag\"\nelse\n\"Insert a new ID into Types\"\nend",
+            "label": "source",
+            "type": "Text"
+          },
+          {
+            "name": "partition",
+            "saqlExpression": "'source' + 'parent_id' + 'field_type_name'",
+            "label": "partition",
+            "type": "Text"
+          }
+        ]
+      }
+    },
+    "sfal_filter_row_summary_line_only": {
+      "action": "filter",
+      "parameters": {
+        "source": "sfal_generate_row_history_summary_line",
+        "saqlFilter": "'RowNumberSummary' == 1"
+      }
+    },
+    "sfal_opportunity_history_filter": {
+      "action": "filter",
+      "parameters": {
+        "source": "sfal_opportunity_history",
+        "saqlFilter": "'Field' in [\"StageName\",\"ForecastCategoryName\"]"
+      }
+    },
+    "sfal_case_history_filter": {
+      "action": "filter",
+      "parameters": {
+        "source": "sfal_case_history",
+        "saqlFilter": "'Field' in [\"Status\",\"CloseDate\",\"Priority\"]"
+      }
+    },
+    "sfal_account_history_calc": {
+      "action": "computeExpression",
+      "parameters": {
+        "source": "sfal_account_history_filter",
+        "mergeWithSource": true,
+        "computedFields": [
+          {
+            "defaultValue": "None",
+            "name": "parent_id",
+            "saqlExpression": "'AccountId'",
+            "label": "parent_id",
+            "type": "Text"
+          },
+          {
+            "name": "field_type_name",
+            "saqlExpression": "'Field'",
+            "label": "field_type_name",
+            "type": "Text"
+          },
+          {
+            "defaultValue": "Insert a new ID to recognize types",
+            "name": "source",
+            "saqlExpression": "case\nwhen substr('parent_id', 1, 3) == \"001\" then \"Account\"\nwhen substr('parent_id', 1, 3) == \"002\" then \"Note\"\nwhen substr('parent_id', 1, 3) == \"003\" then \"Contact\"\nwhen substr('parent_id', 1, 3) == \"005\" then \"User\"\nwhen substr('parent_id', 1, 3) == \"006\" then \"Opportunity\"\nwhen substr('parent_id', 1, 3) == \"008\" then \"OpportunityHistory\"\nwhen substr('parent_id', 1, 3) == \"100\" then \"UserLicense\"\nwhen substr('parent_id', 1, 3) == \"101\" then \"Custom Label\"\nwhen substr('parent_id', 1, 3) == \"400\" then \"ApexClassMember\"\nwhen substr('parent_id', 1, 3) == \"500\" then \"Case\"\nwhen substr('parent_id', 1, 3) == \"501\" then \"Solution\"\nwhen substr('parent_id', 1, 3) == \"608\" then \"ForecastShare\"\nwhen substr('parent_id', 1, 3) == \"701\" then \"Campaign\"\nwhen substr('parent_id', 1, 3) == \"707\" then \"AsyncApexJob\"\nwhen substr('parent_id', 1, 3) == \"709\" then \"ApexTestQueueItem\"\nwhen substr('parent_id', 1, 3) == \"750\" then \"Bulk Query Job\"\nwhen substr('parent_id', 1, 3) == \"751\" then \"Bulk Query Batch\"\nwhen substr('parent_id', 1, 3) == \"752\" then \"Bulk Query Result\"\nwhen substr('parent_id', 1, 3) == \"800\" then \"Contract\"\nwhen substr('parent_id', 1, 3) == \"806\" then \"Approval\"\nwhen substr('parent_id', 1, 3) == \"888\" then \"Remote Access\"\nwhen substr('parent_id', 1, 3) == \"000\" then \"Empty Key\"\nwhen substr('parent_id', 1, 3) == \"00a\" then \"CaseComment/IdeaComment\"\nwhen substr('parent_id', 1, 3) == \"00b\" then \"WebLink\"\nwhen substr('parent_id', 1, 3) == \"00B\" then \"View\"\nwhen substr('parent_id', 1, 3) == \"00D\" then \"Organization\"\nwhen substr('parent_id', 1, 3) == \"00e\" then \"Profile\"\nwhen substr('parent_id', 1, 3) == \"00E\" then \"UserRole\"\nwhen substr('parent_id', 1, 3) == \"00G\" then \"Group\"\nwhen substr('parent_id', 1, 3) == \"00h\" then \"Page Layout\"\nwhen substr('parent_id', 1, 3) == \"00I\" then \"Partner\"\nwhen substr('parent_id', 1, 3) == \"00J\" then \"OpportunityCompetitor\"\nwhen substr('parent_id', 1, 3) == \"00K\" then \"OpportunityContactRole\"\nwhen substr('parent_id', 1, 3) == \"00k\" then \"OpportunityLineItem\"\nwhen substr('parent_id', 1, 3) == \"00l\" then \"Folder\"\nwhen substr('parent_id', 1, 3) == \"00N\" then \"Custom Field Definition\"\nwhen substr('parent_id', 1, 3) == \"00o\" then \"OpportunityLineItemSchedule\"\nwhen substr('parent_id', 1, 3) == \"00O\" then \"Report\"\nwhen substr('parent_id', 1, 3) == \"00P\" then \"Attachment\"\nwhen substr('parent_id', 1, 3) == \"00p\" then \"UserTeamMember\"\nwhen substr('parent_id', 1, 3) == \"00Q\" then \"Lead\"\nwhen substr('parent_id', 1, 3) == \"00q\" then \"OpportunityTeamMember \"\nwhen substr('parent_id', 1, 3) == \"00r\" then \"AccountShare\"\nwhen substr('parent_id', 1, 3) == \"00S\" then \"Import Queue\"\nwhen substr('parent_id', 1, 3) == \"00t\" then \"OpportunityShare\"\nwhen substr('parent_id', 1, 3) == \"00T\" then \"Task\"\nwhen substr('parent_id', 1, 3) == \"00U\" then \"Event\"\nwhen substr('parent_id', 1, 3) == \"00v\" then \"CampaignMember\"\nwhen substr('parent_id', 1, 3) == \"00X\" then \"EmailTemplate\"\nwhen substr('parent_id', 1, 3) == \"010\" then \"CaseSolution\"\nwhen substr('parent_id', 1, 3) == \"011\" then \"GroupMember\"\nwhen substr('parent_id', 1, 3) == \"012\" then \"RecordType\"\nwhen substr('parent_id', 1, 3) == \"015\" then \"Document\"\nwhen substr('parent_id', 1, 3) == \"016\" then \"BrandTemplate (Letterhead)\"\nwhen substr('parent_id', 1, 3) == \"018\" then \"EmailStatus\"\nwhen substr('parent_id', 1, 3) == \"019\" then \"BusinessProcess\"\nwhen substr('parent_id', 1, 3) == \"01a\" then \"DashboardComponent\"\nwhen substr('parent_id', 1, 3) == \"01D\" then \"UserAccountTeamMember\"\nwhen substr('parent_id', 1, 3) == \"01H\" then \"MailmergeTemplate\"\nwhen substr('parent_id', 1, 3) == \"01I\" then \"Custom Object\"\nwhen substr('parent_id', 1, 3) == \"01m\" then \"BusinessHours\"\nwhen substr('parent_id', 1, 3) == \"01M\" then \"AccountTeamMember\"\nwhen substr('parent_id', 1, 3) == \"01n\" then \"CaseShare\"\nwhen substr('parent_id', 1, 3) == \"01N\" then \"Scontrol\"\nwhen substr('parent_id', 1, 3) == \"01o\" then \"LeadShare\"\nwhen substr('parent_id', 1, 3) == \"01p\" then \"ApexClass\"\nwhen substr('parent_id', 1, 3) == \"01q\" then \"ApexTrigger\"\nwhen substr('parent_id', 1, 3) == \"01Q\" then \"AssignmentRule\"\nwhen substr('parent_id', 1, 3) == \"01Q\" then \"Workflow Rule\"\nwhen substr('parent_id', 1, 3) == \"01r\" then \"Visualforce Tab\"\nwhen substr('parent_id', 1, 3) == \"01s\" then \"Pricebook2\"\nwhen substr('parent_id', 1, 3) == \"01t\" then \"Product2\"\nwhen substr('parent_id', 1, 3) == \"01u\" then \"PricebookEntry\"\nwhen substr('parent_id', 1, 3) == \"01Y\" then \"CampaignMemberStatus\"\nwhen substr('parent_id', 1, 3) == \"01Z\" then \"Dashboard\"\nwhen substr('parent_id', 1, 3) == \"020\" then \"EventAttendee\"\nwhen substr('parent_id', 1, 3) == \"021\" then \"QuantityForecast\"\nwhen substr('parent_id', 1, 3) == \"022\" then \"FiscalYearSettings\"\nwhen substr('parent_id', 1, 3) == \"026\" then \"Period\"\nwhen substr('parent_id', 1, 3) == \"027\" then \"RevenueForecast\"\nwhen substr('parent_id', 1, 3) == \"028\" then \"OpportunityOverride\"\nwhen substr('parent_id', 1, 3) == \"029\" then \"LineitemOverride\"\nwhen substr('parent_id', 1, 3) == \"02a\" then \"ContractContactRole\"\nwhen substr('parent_id', 1, 3) == \"02c\" then \"Sharing Rule\"\nwhen substr('parent_id', 1, 3) == \"02i\" then \"Asset\"\nwhen substr('parent_id', 1, 3) == \"02n\" then \"CategoryNode\"\nwhen substr('parent_id', 1, 3) == \"02o\" then \"CategoryData\"\nwhen substr('parent_id', 1, 3) == \"02s\" then \"EmailMessage\"\nwhen substr('parent_id', 1, 3) == \"02Z\" then \"AccountContactRole\"\nwhen substr('parent_id', 1, 3) == \"033\" then \"Package\"\nwhen substr('parent_id', 1, 3) == \"035\" then \"SelfServiceUser\"\nwhen substr('parent_id', 1, 3) == \"03d\" then \"Validation Rule\"\nwhen substr('parent_id', 1, 3) == \"03g\" then \"QueueSobject\"\nwhen substr('parent_id', 1, 3) == \"03j\" then \"CaseContactRole\"\nwhen substr('parent_id', 1, 3) == \"03s\" then \"ContactShare\"\nwhen substr('parent_id', 1, 3) == \"03u\" then \"UserPreference\"\nwhen substr('parent_id', 1, 3) == \"04g\" then \"ProcessInstance\"\nwhen substr('parent_id', 1, 3) == \"04h\" then \"ProcessInstanceStep\"\nwhen substr('parent_id', 1, 3) == \"04i\" then \"ProcessInstanceWorkitem\"\nwhen substr('parent_id', 1, 3) == \"04k\" then \"Outbound Message Id\"\nwhen substr('parent_id', 1, 3) == \"04l\" then \"Outbound Notification Id\"\nwhen substr('parent_id', 1, 3) == \"04m\" then \"AdditionalNumber\"\nwhen substr('parent_id', 1, 3) == \"04s\" then \"AsyncResult/DeployResult\"\nwhen substr('parent_id', 1, 3) == \"04t\" then \"Install Package\"\nwhen substr('parent_id', 1, 3) == \"04v\" then \"CallCenter\"\nwhen substr('parent_id', 1, 3) == \"04W\" then \"RevenueForecastHistory\"\nwhen substr('parent_id', 1, 3) == \"04X\" then \"QuantityForecastHistory\"\nwhen substr('parent_id', 1, 3) == \"04Y\" then \"Field Update\"\nwhen substr('parent_id', 1, 3) == \"058\" then \"ContentWorkspace\"\nwhen substr('parent_id', 1, 3) == \"059\" then \"ContentWorkspaceDoc\"\nwhen substr('parent_id', 1, 3) == \"05X\" then \"DocumentAttachmentMap\"\nwhen substr('parent_id', 1, 3) == \"060\" then \"Portal Id\"\nwhen substr('parent_id', 1, 3) == \"066\" then \"ApexPage\"\nwhen substr('parent_id', 1, 3) == \"068\" then \"ContentVersion\"\nwhen substr('parent_id', 1, 3) == \"069\" then \"ContentDocument\"\nwhen substr('parent_id', 1, 3) == \"07E\" then \"Sandbox\"\nwhen substr('parent_id', 1, 3) == \"07L\" then \"ApexLog\"\nwhen substr('parent_id', 1, 3) == \"07M\" then \"ApexTestResult\"\nwhen substr('parent_id', 1, 3) == \"07M\" then \"Apex Test Result\"\nwhen substr('parent_id', 1, 3) == \"081\" then \"StaticResource\"\nwhen substr('parent_id', 1, 3) == \"082\" then \"Data from Uninstalled Packages\"\nwhen substr('parent_id', 1, 3) == \"083\" then \"Vote\"\nwhen substr('parent_id', 1, 3) == \"087\" then \"Idea\"\nwhen substr('parent_id', 1, 3) == \"08e\" then \"CronTrigger\"\nwhen substr('parent_id', 1, 3) == \"08s\" then \"CampaignShare\"\nwhen substr('parent_id', 1, 3) == \"091\" then \"EmailServicesFunction\"\nwhen substr('parent_id', 1, 3) == \"092\" then \"Weekly Data Export\"\nwhen substr('parent_id', 1, 3) == \"093\" then \"EmailServicesAddress\"\nwhen substr('parent_id', 1, 3) == \"099\" then \"ApexComponent\"\nwhen substr('parent_id', 1, 3) == \"09a\" then \"Community\"\nwhen substr('parent_id', 1, 3) == \"0A2\" then \"Change Set\"\nwhen substr('parent_id', 1, 3) == \"0A3\" then \"Installed Package\"\nwhen substr('parent_id', 1, 3) == \"0BM\" then \"Connection - Salesforce to Salesforce\"\nwhen substr('parent_id', 1, 3) == \"0C0\" then \"Holiday\"\nwhen substr('parent_id', 1, 3) == \"0D2\" then \"OrgWideEmailAddress\"\nwhen substr('parent_id', 1, 3) == \"0D5\" then \"UserProfileFeed\"\nwhen substr('parent_id', 1, 3) == \"0D5\" then \"FeedItem/NewsFeed/UserProfileFeed\"\nwhen substr('parent_id', 1, 3) == \"0DM\" then \"Site\"\nwhen substr('parent_id', 1, 3) == \"000\" then \"EntitySubscription\"\nwhen substr('parent_id', 1, 3) == \"0EP\" then \"Inbound Change Set\"\nwhen substr('parent_id', 1, 3) == \"0J0\" then \"SetupEntityAccess\"\nwhen substr('parent_id', 1, 3) == \"0PS\" then \"Permission Set Metadata\"\nwhen substr('parent_id', 1, 3) == \"0Q0\" then \"Quote\"\nwhen substr('parent_id', 1, 3) == \"0t0\" then \"TagDefinition\"\nwhen substr('parent_id', 1, 3) == \"0Ya\" then \"LoginHistory\"\nwhen substr('parent_id', 1, 3) == \"1dc\" then \"MetadataContainer\"\nwhen substr('parent_id', 1, 3) == \"1dr\" then \"ContainerAsyncRequest\"\nwhen substr('parent_id', 1, 3) == \"7tf\" then \"TraceFlag\"\nelse\n\"Insert a new ID into Types\"\nend",
+            "label": "source",
+            "type": "Text"
+          },
+          {
+            "saqlExpression": "'source' + 'parent_id' + 'field_type_name'",
+            "name": "partition",
+            "label": "partition",
+            "type": "Text"
+          }
+        ]
+      }
+    },
+    "sfal_opportunity_field_history_calc": {
+      "action": "computeExpression",
+      "parameters": {
+        "source": "sfal_opportunity_field_history_filter",
+        "mergeWithSource": true,
+        "computedFields": [
+          {
+            "name": "parent_id",
+            "saqlExpression": "'OpportunityId'",
+            "label": "parent_id",
+            "type": "Text"
+          },
+          {
+            "name": "field_type_name",
+            "saqlExpression": "'Field'",
+            "label": "field_type_name",
+            "type": "Text"
+          },
+          {
+            "name": "source",
+            "saqlExpression": "case\nwhen substr('parent_id', 1, 3) == \"001\" then \"Account\"\nwhen substr('parent_id', 1, 3) == \"002\" then \"Note\"\nwhen substr('parent_id', 1, 3) == \"003\" then \"Contact\"\nwhen substr('parent_id', 1, 3) == \"005\" then \"User\"\nwhen substr('parent_id', 1, 3) == \"006\" then \"Opportunity\"\nwhen substr('parent_id', 1, 3) == \"008\" then \"OpportunityHistory\"\nwhen substr('parent_id', 1, 3) == \"100\" then \"UserLicense\"\nwhen substr('parent_id', 1, 3) == \"101\" then \"Custom Label\"\nwhen substr('parent_id', 1, 3) == \"400\" then \"ApexClassMember\"\nwhen substr('parent_id', 1, 3) == \"500\" then \"Case\"\nwhen substr('parent_id', 1, 3) == \"501\" then \"Solution\"\nwhen substr('parent_id', 1, 3) == \"608\" then \"ForecastShare\"\nwhen substr('parent_id', 1, 3) == \"701\" then \"Campaign\"\nwhen substr('parent_id', 1, 3) == \"707\" then \"AsyncApexJob\"\nwhen substr('parent_id', 1, 3) == \"709\" then \"ApexTestQueueItem\"\nwhen substr('parent_id', 1, 3) == \"750\" then \"Bulk Query Job\"\nwhen substr('parent_id', 1, 3) == \"751\" then \"Bulk Query Batch\"\nwhen substr('parent_id', 1, 3) == \"752\" then \"Bulk Query Result\"\nwhen substr('parent_id', 1, 3) == \"800\" then \"Contract\"\nwhen substr('parent_id', 1, 3) == \"806\" then \"Approval\"\nwhen substr('parent_id', 1, 3) == \"888\" then \"Remote Access\"\nwhen substr('parent_id', 1, 3) == \"000\" then \"Empty Key\"\nwhen substr('parent_id', 1, 3) == \"00a\" then \"CaseComment/IdeaComment\"\nwhen substr('parent_id', 1, 3) == \"00b\" then \"WebLink\"\nwhen substr('parent_id', 1, 3) == \"00B\" then \"View\"\nwhen substr('parent_id', 1, 3) == \"00D\" then \"Organization\"\nwhen substr('parent_id', 1, 3) == \"00e\" then \"Profile\"\nwhen substr('parent_id', 1, 3) == \"00E\" then \"UserRole\"\nwhen substr('parent_id', 1, 3) == \"00G\" then \"Group\"\nwhen substr('parent_id', 1, 3) == \"00h\" then \"Page Layout\"\nwhen substr('parent_id', 1, 3) == \"00I\" then \"Partner\"\nwhen substr('parent_id', 1, 3) == \"00J\" then \"OpportunityCompetitor\"\nwhen substr('parent_id', 1, 3) == \"00K\" then \"OpportunityContactRole\"\nwhen substr('parent_id', 1, 3) == \"00k\" then \"OpportunityLineItem\"\nwhen substr('parent_id', 1, 3) == \"00l\" then \"Folder\"\nwhen substr('parent_id', 1, 3) == \"00N\" then \"Custom Field Definition\"\nwhen substr('parent_id', 1, 3) == \"00o\" then \"OpportunityLineItemSchedule\"\nwhen substr('parent_id', 1, 3) == \"00O\" then \"Report\"\nwhen substr('parent_id', 1, 3) == \"00P\" then \"Attachment\"\nwhen substr('parent_id', 1, 3) == \"00p\" then \"UserTeamMember\"\nwhen substr('parent_id', 1, 3) == \"00Q\" then \"Lead\"\nwhen substr('parent_id', 1, 3) == \"00q\" then \"OpportunityTeamMember \"\nwhen substr('parent_id', 1, 3) == \"00r\" then \"AccountShare\"\nwhen substr('parent_id', 1, 3) == \"00S\" then \"Import Queue\"\nwhen substr('parent_id', 1, 3) == \"00t\" then \"OpportunityShare\"\nwhen substr('parent_id', 1, 3) == \"00T\" then \"Task\"\nwhen substr('parent_id', 1, 3) == \"00U\" then \"Event\"\nwhen substr('parent_id', 1, 3) == \"00v\" then \"CampaignMember\"\nwhen substr('parent_id', 1, 3) == \"00X\" then \"EmailTemplate\"\nwhen substr('parent_id', 1, 3) == \"010\" then \"CaseSolution\"\nwhen substr('parent_id', 1, 3) == \"011\" then \"GroupMember\"\nwhen substr('parent_id', 1, 3) == \"012\" then \"RecordType\"\nwhen substr('parent_id', 1, 3) == \"015\" then \"Document\"\nwhen substr('parent_id', 1, 3) == \"016\" then \"BrandTemplate (Letterhead)\"\nwhen substr('parent_id', 1, 3) == \"018\" then \"EmailStatus\"\nwhen substr('parent_id', 1, 3) == \"019\" then \"BusinessProcess\"\nwhen substr('parent_id', 1, 3) == \"01a\" then \"DashboardComponent\"\nwhen substr('parent_id', 1, 3) == \"01D\" then \"UserAccountTeamMember\"\nwhen substr('parent_id', 1, 3) == \"01H\" then \"MailmergeTemplate\"\nwhen substr('parent_id', 1, 3) == \"01I\" then \"Custom Object\"\nwhen substr('parent_id', 1, 3) == \"01m\" then \"BusinessHours\"\nwhen substr('parent_id', 1, 3) == \"01M\" then \"AccountTeamMember\"\nwhen substr('parent_id', 1, 3) == \"01n\" then \"CaseShare\"\nwhen substr('parent_id', 1, 3) == \"01N\" then \"Scontrol\"\nwhen substr('parent_id', 1, 3) == \"01o\" then \"LeadShare\"\nwhen substr('parent_id', 1, 3) == \"01p\" then \"ApexClass\"\nwhen substr('parent_id', 1, 3) == \"01q\" then \"ApexTrigger\"\nwhen substr('parent_id', 1, 3) == \"01Q\" then \"AssignmentRule\"\nwhen substr('parent_id', 1, 3) == \"01Q\" then \"Workflow Rule\"\nwhen substr('parent_id', 1, 3) == \"01r\" then \"Visualforce Tab\"\nwhen substr('parent_id', 1, 3) == \"01s\" then \"Pricebook2\"\nwhen substr('parent_id', 1, 3) == \"01t\" then \"Product2\"\nwhen substr('parent_id', 1, 3) == \"01u\" then \"PricebookEntry\"\nwhen substr('parent_id', 1, 3) == \"01Y\" then \"CampaignMemberStatus\"\nwhen substr('parent_id', 1, 3) == \"01Z\" then \"Dashboard\"\nwhen substr('parent_id', 1, 3) == \"020\" then \"EventAttendee\"\nwhen substr('parent_id', 1, 3) == \"021\" then \"QuantityForecast\"\nwhen substr('parent_id', 1, 3) == \"022\" then \"FiscalYearSettings\"\nwhen substr('parent_id', 1, 3) == \"026\" then \"Period\"\nwhen substr('parent_id', 1, 3) == \"027\" then \"RevenueForecast\"\nwhen substr('parent_id', 1, 3) == \"028\" then \"OpportunityOverride\"\nwhen substr('parent_id', 1, 3) == \"029\" then \"LineitemOverride\"\nwhen substr('parent_id', 1, 3) == \"02a\" then \"ContractContactRole\"\nwhen substr('parent_id', 1, 3) == \"02c\" then \"Sharing Rule\"\nwhen substr('parent_id', 1, 3) == \"02i\" then \"Asset\"\nwhen substr('parent_id', 1, 3) == \"02n\" then \"CategoryNode\"\nwhen substr('parent_id', 1, 3) == \"02o\" then \"CategoryData\"\nwhen substr('parent_id', 1, 3) == \"02s\" then \"EmailMessage\"\nwhen substr('parent_id', 1, 3) == \"02Z\" then \"AccountContactRole\"\nwhen substr('parent_id', 1, 3) == \"033\" then \"Package\"\nwhen substr('parent_id', 1, 3) == \"035\" then \"SelfServiceUser\"\nwhen substr('parent_id', 1, 3) == \"03d\" then \"Validation Rule\"\nwhen substr('parent_id', 1, 3) == \"03g\" then \"QueueSobject\"\nwhen substr('parent_id', 1, 3) == \"03j\" then \"CaseContactRole\"\nwhen substr('parent_id', 1, 3) == \"03s\" then \"ContactShare\"\nwhen substr('parent_id', 1, 3) == \"03u\" then \"UserPreference\"\nwhen substr('parent_id', 1, 3) == \"04g\" then \"ProcessInstance\"\nwhen substr('parent_id', 1, 3) == \"04h\" then \"ProcessInstanceStep\"\nwhen substr('parent_id', 1, 3) == \"04i\" then \"ProcessInstanceWorkitem\"\nwhen substr('parent_id', 1, 3) == \"04k\" then \"Outbound Message Id\"\nwhen substr('parent_id', 1, 3) == \"04l\" then \"Outbound Notification Id\"\nwhen substr('parent_id', 1, 3) == \"04m\" then \"AdditionalNumber\"\nwhen substr('parent_id', 1, 3) == \"04s\" then \"AsyncResult/DeployResult\"\nwhen substr('parent_id', 1, 3) == \"04t\" then \"Install Package\"\nwhen substr('parent_id', 1, 3) == \"04v\" then \"CallCenter\"\nwhen substr('parent_id', 1, 3) == \"04W\" then \"RevenueForecastHistory\"\nwhen substr('parent_id', 1, 3) == \"04X\" then \"QuantityForecastHistory\"\nwhen substr('parent_id', 1, 3) == \"04Y\" then \"Field Update\"\nwhen substr('parent_id', 1, 3) == \"058\" then \"ContentWorkspace\"\nwhen substr('parent_id', 1, 3) == \"059\" then \"ContentWorkspaceDoc\"\nwhen substr('parent_id', 1, 3) == \"05X\" then \"DocumentAttachmentMap\"\nwhen substr('parent_id', 1, 3) == \"060\" then \"Portal Id\"\nwhen substr('parent_id', 1, 3) == \"066\" then \"ApexPage\"\nwhen substr('parent_id', 1, 3) == \"068\" then \"ContentVersion\"\nwhen substr('parent_id', 1, 3) == \"069\" then \"ContentDocument\"\nwhen substr('parent_id', 1, 3) == \"07E\" then \"Sandbox\"\nwhen substr('parent_id', 1, 3) == \"07L\" then \"ApexLog\"\nwhen substr('parent_id', 1, 3) == \"07M\" then \"ApexTestResult\"\nwhen substr('parent_id', 1, 3) == \"07M\" then \"Apex Test Result\"\nwhen substr('parent_id', 1, 3) == \"081\" then \"StaticResource\"\nwhen substr('parent_id', 1, 3) == \"082\" then \"Data from Uninstalled Packages\"\nwhen substr('parent_id', 1, 3) == \"083\" then \"Vote\"\nwhen substr('parent_id', 1, 3) == \"087\" then \"Idea\"\nwhen substr('parent_id', 1, 3) == \"08e\" then \"CronTrigger\"\nwhen substr('parent_id', 1, 3) == \"08s\" then \"CampaignShare\"\nwhen substr('parent_id', 1, 3) == \"091\" then \"EmailServicesFunction\"\nwhen substr('parent_id', 1, 3) == \"092\" then \"Weekly Data Export\"\nwhen substr('parent_id', 1, 3) == \"093\" then \"EmailServicesAddress\"\nwhen substr('parent_id', 1, 3) == \"099\" then \"ApexComponent\"\nwhen substr('parent_id', 1, 3) == \"09a\" then \"Community\"\nwhen substr('parent_id', 1, 3) == \"0A2\" then \"Change Set\"\nwhen substr('parent_id', 1, 3) == \"0A3\" then \"Installed Package\"\nwhen substr('parent_id', 1, 3) == \"0BM\" then \"Connection - Salesforce to Salesforce\"\nwhen substr('parent_id', 1, 3) == \"0C0\" then \"Holiday\"\nwhen substr('parent_id', 1, 3) == \"0D2\" then \"OrgWideEmailAddress\"\nwhen substr('parent_id', 1, 3) == \"0D5\" then \"UserProfileFeed\"\nwhen substr('parent_id', 1, 3) == \"0D5\" then \"FeedItem/NewsFeed/UserProfileFeed\"\nwhen substr('parent_id', 1, 3) == \"0DM\" then \"Site\"\nwhen substr('parent_id', 1, 3) == \"000\" then \"EntitySubscription\"\nwhen substr('parent_id', 1, 3) == \"0EP\" then \"Inbound Change Set\"\nwhen substr('parent_id', 1, 3) == \"0J0\" then \"SetupEntityAccess\"\nwhen substr('parent_id', 1, 3) == \"0PS\" then \"Permission Set Metadata\"\nwhen substr('parent_id', 1, 3) == \"0Q0\" then \"Quote\"\nwhen substr('parent_id', 1, 3) == \"0t0\" then \"TagDefinition\"\nwhen substr('parent_id', 1, 3) == \"0Ya\" then \"LoginHistory\"\nwhen substr('parent_id', 1, 3) == \"1dc\" then \"MetadataContainer\"\nwhen substr('parent_id', 1, 3) == \"1dr\" then \"ContainerAsyncRequest\"\nwhen substr('parent_id', 1, 3) == \"7tf\" then \"TraceFlag\"\nelse\n\"Insert a new ID into Types\"\nend",
+            "label": "source",
+            "type": "Text"
+          },
+          {
+            "name": "partition",
+            "saqlExpression": "'source' + 'parent_id' + 'field_type_name'",
+            "label": "partition",
+            "type": "Text"
+          }
+        ]
+      }
+    },
+    "sfal_generate_row_history_summary_line": {
+      "action": "computeRelative",
+      "parameters": {
+        "partitionBy": ["partition"],
+        "orderBy": [{
+          "name": "RowNumber",
+          "direction": "asc"
+        }],
+        "source": "sfal_generate_row_history_intermediate",
+        "computedFields": [{
+          "expression": {
+            "default": "0",
+            "saqlExpression": "case when previous('RowNumberSummary') is null then 1 else previous('RowNumberSummary') +1 end",
+            "scale": 2,
+            "type": "Numeric"
+          },
+          "name": "RowNumberSummary",
+          "label": "RowNumberSummary"
+        }]
+      }
+    },
+    "sfal_generate_row_history": {
+      "action": "computeRelative",
+      "parameters": {
+        "partitionBy": ["partition"],
+        "orderBy": [{
+          "name": "CreatedDate",
+          "direction": "asc"
+        }],
+        "source": "sfal_null_value_replace",
+        "computedFields": [
+          {
+            "expression": {
+              "default": "999999",
+              "saqlExpression": "case when next('created_date_day_epoch') is null then current('now_date_to_create_date_epoch_days')\nelse \nnext('created_date_day_epoch') - current('created_date_day_epoch') end",
+              "scale": 2,
+              "type": "Numeric"
+            },
+            "name": "days_in_state",
+            "label": "days_in_state"
+          },
+          {
+            "expression": {
+              "saqlExpression": "case when previous('RowNumber') is null then 1 else previous('RowNumber') +1 end",
+              "type": "Numeric"
+            },
+            "name": "RowNumber",
+            "label": "RowNumber"
+          },
+          {
+            "expression": {
+              "default": "0",
+              "saqlExpression": "case when next('created_date_day_epoch') is null then current('now_date_to_create_date_epoch_days')\nelse \n0 end",
+              "scale": 2,
+              "type": "Numeric"
+            },
+            "name": "days_in_last_state",
+            "label": "days_in_last_state"
+          }
+        ]
+      }
+    },
+    "sfal_opportunity_field_history": {
+      "action": "sfdcDigest",
+      "parameters": {
+        "fields": [
+          {"name": "Field"},
+          {"name": "NewValue"},
+          {"name": "OldValue"},
+          {"name": "OpportunityId"},
+          {"name": "Id"},
+          {"name": "CreatedDate"}
+        ],
+        "object": "OpportunityFieldHistory"
+      }
+    }
+  },
+  "_type": "dataflow",
+  "MasterLabel": "ActivityLifecycle",
+  "nextRun": "2020-09-23T14:00:00.000Z",
+  "frequency": "hour",
+  "WorkflowStatus": "Inactive",
+  "isDeletable": true,
+  "longRunningAlertInMins": "",
+  "scheduleAttributes": {
+    "scheduleType": "hourly",
+    "hourlyInterval": 1,
+    "timeZone": "Europe/London",
+    "startTime": {
+      "hour": 0,
+      "minute": 0
+    },
+    "daysOfWeek": [
+      "Sunday",
+      "Monday",
+      "Tuesday",
+      "Wednesday",
+      "Thursday",
+      "Friday",
+      "Saturday"
+    ]
+  },
+  "DataflowType": "USER",
+  "name": "ActivityLifecycle",
+  "RefreshFrequencySec": 86400,
+  "interval": 1,
+  "_url": "/insights/internal_api/v1.0/esObject/workflow//json",
+  "_uid": ""
+}

@@ -1,0 +1,77 @@
+{
+  "templateType" : "embeddedapp",
+  "autoInstallDefinition": "auto-install.json",
+  "label" : "Activity Lifecycle",
+  "name" : "Activity_Lifecycle",
+  "description" : "Turn changes to Salesforce records into easily digestible information.",
+  "assetVersion" : 50.0,
+  "variableDefinition" : "variables.json",
+  "uiDefinition" : "ui.json",
+  "rules" : [
+    {
+      "type" : "templateToApp",
+      "file" : "template-to-app-rules.json"
+    },
+    {
+      "type" : "appToTemplate",
+      "file" : "app-to-template-rules.json"
+    }
+  ],
+  "releaseInfo" : {
+    "templateVersion" : "1.0",
+    "notesFile" : "releaseNotes.html"
+  },
+  "folderDefinition" : "folder.json",
+  "externalFiles" : [ ],
+  "lenses" : [ ],
+  "dashboards" : [
+    {
+      "label" : "Activity Lifecycle",
+      "name" : "Activity_Lifecycle_tp",
+      "condition" : "${Variables.Overrides.createAllDashboards}",
+      "file" : "dashboards/Activity_Lifecycle.json"
+    }
+  ],
+  "eltDataflows" : [
+    {
+      "label" : "ActivityLifecycle",
+      "name" : "ActivityLifecycle",
+      "condition" : "${Variables.Overrides.createDataflow}",
+      "file" : "dataflow/ActivityLifecycle.json"
+    }
+  ],
+  "recipes" : [ ],
+  "datasetFiles" : [
+    {
+      "label" : "Salesforce_Activity_Lifecycle",
+      "name" : "Salesforce_Activity_Lifecycle_tp",
+      "condition" : "${Variables.Overrides.createAllDatasetFiles}",
+      "userXmd" : "dataset_files/Salesforce_Activity_Lifecycle_XMD.json"
+    }
+  ],
+  "storedQueries" : [ ],
+  "imageFiles" : [
+    {
+      "name" : "cloudspng",
+      "condition" : "${Variables.Overrides.createAllImages}",
+      "file" : "images/clouds.png"
+    }
+  ],
+  "extendedTypes" : { },
+  "templateDependencies" : [ ],
+  "icons" : {
+    "appBadge" : {
+      "name" : "16.png"
+    },
+    "templateBadge" : {
+      "name" : "default.png"
+    },
+    "templatePreviews" : [
+      {
+        "name" : "sfal_preview",
+        "label" : "Salesforce Activity Lifecycle",
+        "description" : "Turn changes to Salesforce records into easily digestible information."
+      }
+    ]
+  }
+}
