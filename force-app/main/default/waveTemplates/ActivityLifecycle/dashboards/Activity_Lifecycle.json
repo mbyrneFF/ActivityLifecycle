@@ -33,7 +33,7 @@
                 "colspan" : 28,
                 "column" : 1,
                 "name" : "text_3",
-                "row" : 28,
+                "row" : 24,
                 "rowspan" : 4,
                 "widgetStyle" : {
                   "backgroundColor" : "#FFFFFF",
@@ -46,24 +46,8 @@
               {
                 "colspan" : 28,
                 "column" : 1,
-                "name" : "container_1",
-                "row" : 16,
-                "rowspan" : 16,
-                "widgetStyle" : {
-                  "backgroundColor" : "#FFFFFF",
-                  "borderColor" : "#C6D3E1",
-                  "borderEdges" : [
-                    "all"
-                  ],
-                  "borderRadius" : 4,
-                  "borderWidth" : 1
-                }
-              },
-              {
-                "colspan" : 28,
-                "column" : 1,
                 "name" : "text_5",
-                "row" : 22,
+                "row" : 18,
                 "rowspan" : 4,
                 "widgetStyle" : {
                   "backgroundColor" : "#FFFFFF",
@@ -77,7 +61,7 @@
                 "colspan" : 26,
                 "column" : 2,
                 "name" : "text_6",
-                "row" : 20,
+                "row" : 16,
                 "rowspan" : 2,
                 "widgetStyle" : {
                   "borderEdges" : [ ]
@@ -87,7 +71,7 @@
                 "colspan" : 26,
                 "column" : 2,
                 "name" : "text_7",
-                "row" : 26,
+                "row" : 22,
                 "rowspan" : 2,
                 "widgetStyle" : {
                   "borderEdges" : [ ]
@@ -97,7 +81,7 @@
                 "colspan" : 28,
                 "column" : 1,
                 "name" : "container_2",
-                "row" : 34,
+                "row" : 31,
                 "rowspan" : 26,
                 "widgetStyle" : {
                   "backgroundColor" : "#FFFFFF",
@@ -113,8 +97,8 @@
                 "colspan" : 28,
                 "column" : 1,
                 "name" : "container_3",
-                "row" : 6,
-                "rowspan" : 8,
+                "row" : 8,
+                "rowspan" : 21,
                 "widgetStyle" : {
                   "backgroundColor" : "#FFFFFF",
                   "borderColor" : "#C6D3E1",
@@ -126,26 +110,26 @@
                 }
               },
               {
-                "colspan" : 30,
-                "column" : 0,
+                "colspan" : 28,
+                "column" : 1,
                 "name" : "container_4",
-                "row" : 0,
+                "row" : 1,
                 "rowspan" : 5,
                 "widgetStyle" : {
-                  "backgroundColor" : "#FFFFFF",
+                  "backgroundColor" : "rgb(0, 112, 210)",
                   "borderColor" : "#FFFFFF",
                   "borderEdges" : [
                     "all"
                   ],
                   "borderRadius" : 0,
-                  "borderWidth" : 8
+                  "borderWidth" : 1
                 }
               },
               {
-                "colspan" : 28,
-                "column" : 1,
+                "colspan" : 27,
+                "column" : 2,
                 "name" : "text_2",
-                "row" : 1,
+                "row" : 2,
                 "rowspan" : 3,
                 "widgetStyle" : {
                   "backgroundColor" : "rgba(255, 255, 255, 0)",
@@ -159,7 +143,7 @@
                 "colspan" : 28,
                 "column" : 1,
                 "name" : "pillbox_2",
-                "row" : 16,
+                "row" : 8,
                 "rowspan" : 3,
                 "widgetStyle" : {
                   "borderEdges" : [ ]
@@ -169,7 +153,7 @@
                 "colspan" : 28,
                 "column" : 1,
                 "name" : "pillbox_3",
-                "row" : 57,
+                "row" : 54,
                 "rowspan" : 3,
                 "widgetStyle" : {
                   "borderEdges" : [ ]
@@ -179,28 +163,17 @@
                 "colspan" : 26,
                 "column" : 2,
                 "name" : "chart_1",
-                "row" : 34,
+                "row" : 31,
                 "rowspan" : 23,
                 "widgetStyle" : {
                   "borderEdges" : [ ]
                 }
               },
               {
-                "colspan" : 28,
-                "column" : 1,
-                "name" : "chart_34",
-                "row" : 9,
-                "rowspan" : 5,
-                "widgetStyle" : {
-                  "borderEdges" : [ ],
-                  "borderRadius" : 8
-                }
-              },
-              {
                 "colspan" : 26,
                 "column" : 2,
-                "name" : "text_1",
-                "row" : 6,
+                "name" : "number_1",
+                "row" : 12,
                 "rowspan" : 3,
                 "widgetStyle" : {
                   "borderEdges" : [ ]
@@ -555,7 +528,7 @@
         "groups" : [ ],
         "label" : "IdDetails",
         "numbers" : [ ],
-        "query" : "q = load \"${App.Datasets.Salesforce_Activity_Lifecycle_tp.FullyQualifiedName}\";\nq = filter q by 'field_type_name' == \"{{coalesce(cell(field_type_name_1.selection, 0, \"field_type_name\"),cell(field_type_name_1.result, 0, \"field_type_name\")).asString()}}\";\nq = filter q by 'parent_id' == \"{{cell(RecordID_1.result, 0, \"parent_id\").asString()}}\";\nq = group q by ('parent_id', 'source', 'field_type_name', 'TypeHistory', 'NewValues');\nq = foreach q generate 'parent_id' as 'parent_id', 'source' as 'source', 'field_type_name' as 'field_type_name', 'TypeHistory' as 'TypeHistory', (case when len('TypeHistory') < 100 then 'TypeHistory' else \"...\" + substr('TypeHistory',len('TypeHistory')-100,len('TypeHistory')) end) as 'Trimmed', 'NewValues' as 'NewValues', count() as 'count';\nq = order q by ('parent_id' asc, 'source' asc, 'field_type_name' asc, 'TypeHistory' asc, 'NewValues' asc);\nq = limit q 2000;",
+        "query" : "q = load \"${App.Datasets.Salesforce_Activity_Lifecycle_tp.FullyQualifiedName}\";\nq = filter q by 'field_type_name' == \"{{coalesce(cell(field_type_name_1.selection, 0, \"field_type_name\"),cell(field_type_name_1.result, 0, \"field_type_name\")).asString()}}\";\nq = filter q by 'parent_id' == \"{{cell(RecordID_1.result, 0, \"parent_id\").asString()}}\";\nq = group q by ('parent_id', 'source', 'field_type_name', 'sfal_full', 'sfal_short','NewValues');\nq = foreach q generate 'parent_id' as 'parent_id', 'source' as 'source', 'field_type_name' as 'field_type_name', 'sfal_full' as 'sfal_full', 'sfal_short' as 'sfal_short', 'NewValues' as 'NewValues', count() as 'count';\nq = order q by ('parent_id' asc, 'source' asc, 'field_type_name' asc, 'sfal_full' asc, 'sfal_short' asc,'NewValues' asc);\nq = limit q 2000;",
         "receiveFacetSource" : {
           "mode" : "none",
           "steps" : [ ]
@@ -812,7 +785,7 @@
         "groups" : [ ],
         "label" : "Next Stage",
         "numbers" : [ ],
-        "query" : "q = load \"${App.Datasets.Salesforce_Activity_Lifecycle_tp.FullyQualifiedName}\";\nq = filter q by 'TypeHistory' matches \"{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}}\";\nq = group q by 'TypeHistory';\nq = foreach q generate 'TypeHistory', (case when starts_with('TypeHistory', \"{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}}\") then 1 end) as 'StartsWith', count() as 'count', replace('TypeHistory', \"{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}}\", \"\") as 'Next Stage', index_of(replace('TypeHistory', \"{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}}\", \"\"), \">\") as 'Index', (case when index_of(replace('TypeHistory', \"{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}}\", \"\"), \">\") == 0 then \"Final\" else substr(replace('TypeHistory', \"{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}} >\", \"\"), 1, index_of(replace('TypeHistory', \"{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}} >\", \"\"), \">\")-2) end) as 'Expected';\nq = filter q by 'StartsWith' == 1;\nq = group q by ('Expected');\nq = foreach q generate 'Expected', sum('count')/sum(sum('count')) over ([..] partition by all) as 'Percentage';\nq = order q by 'Percentage' desc;\nq = limit q {{cell(static_1.selection, 0, \"Limit\").asString()}};",
+        "query" : "q = load \"${App.Datasets.Salesforce_Activity_Lifecycle_tp.FullyQualifiedName}\";\nq = filter q by 'sfal_full' matches \"{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}}\";\nq = group q by 'sfal_full';\nq = foreach q generate 'sfal_full', (case when starts_with('sfal_full', \"{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}}\") then 1 end) as 'StartsWith', count() as 'count', replace('sfal_full', \"{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}}\", \"\") as 'Next Stage', index_of(replace('sfal_full', \"{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}}\", \"\"), \">\") as 'Index', (case when index_of(replace('sfal_full', \"{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}}\", \"\"), \">\") == 0 then \"Final\" else substr(replace('sfal_full', \"{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}} >\", \"\"), 1, index_of(replace('sfal_full', \"{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}} >\", \"\")+\">\", \">\")-2) end) as 'Expected';\nq = filter q by 'StartsWith' == 1;\nq = group q by ('Expected');\nq = foreach q generate 'Expected', sum('count')/sum(sum('count')) over ([..] partition by all) as 'Percentage';\nq = order q by 'Percentage' desc;\nq = limit q {{cell(static_1.selection, 0, \"Limit\").asString()}};",
         "receiveFacetSource" : {
           "mode" : "none",
           "steps" : [ ]
@@ -1083,26 +1056,6 @@
       "borderWidth" : 1
     },
     "widgets" : {
-      "text_1" : {
-        "parameters" : {
-          "content" : {
-            "displayTemplate" : "Days as {{coalesce(cell(field_type_name_1.selection, 0, \"field_type_name\"),cell(field_type_name_1.result, 0, \"field_type_name\")).asString()}}: {{cell(IdDetails_1.result, 0, \"NewValues\").asString()}}"
-          },
-          "fontSize" : 16,
-          "showActionMenu" : true,
-          "textAlignment" : "left",
-          "textColor" : "#091A3E"
-        },
-        "type" : "text"
-      },
-      "container_1" : {
-        "parameters" : {
-          "alignmentX" : "left",
-          "alignmentY" : "top",
-          "fit" : "original"
-        },
-        "type" : "container"
-      },
       "container_2" : {
         "parameters" : {
           "alignmentX" : "left",
@@ -1118,7 +1071,7 @@
           "fontSize" : 14,
           "measureField" : "none",
           "selectedTab" : {
-            "backgroundColor" : "#0070D2",
+            "backgroundColor" : "rgb(0, 112, 210)",
             "borderColor" : "#C6D3E1",
             "borderEdges" : [ ],
             "borderWidth" : 1,
@@ -1129,6 +1082,22 @@
           "textColor" : "#0070D2"
         },
         "type" : "pillbox"
+      },
+      "number_1" : {
+        "parameters" : {
+          "compact" : false,
+          "exploreLink" : true,
+          "measureField" : "sum_days_in_last_state",
+          "numberColor" : "#091A3E",
+          "numberSize" : 16,
+          "showActionMenu" : true,
+          "step" : "Days_in_Current_Stat_1",
+          "textAlignment" : "left",
+          "title" : "Days as current {{coalesce(cell(field_type_name_1.selection, 0, \"field_type_name\"),cell(field_type_name_1.result, 0, \"field_type_name\")).asString()}}",
+          "titleColor" : "#091A3E",
+          "titleSize" : 16
+        },
+        "type" : "number"
       },
       "container_3" : {
         "parameters" : {
@@ -1142,11 +1111,7 @@
         "parameters" : {
           "alignmentX" : "center",
           "alignmentY" : "top",
-          "fit" : "stretch",
-          "image" : {
-            "name" : "${App.Images['cloudspng'].Name}",
-            "namespace" : "${Org.Namespace}"
-          }
+          "fit" : "stretch"
         },
         "type" : "container"
       },
@@ -1174,13 +1139,13 @@
       "text_3" : {
         "parameters" : {
           "content" : {
-            "displayTemplate" : "{{cell(IdDetails_1.result, 0, \"Trimmed\").asString()}} > {{cell(Next_Stage_1.result, 0, \"Expected\").asString()}}"
+            "displayTemplate" : "{{cell(IdDetails_1.result, 0, \"sfal_short\").asString()}} > {{cell(Next_Stage_1.result, 0, \"Expected\").asString()}}"
           },
           "fontSize" : 12,
           "showActionMenu" : true,
           "textAlignment" : "left",
           "textColor" : "#091A3E",
-          "tooltip" : "{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}} > {{cell(Next_Stage_1.result, 0, \"Expected\").asString()}}"
+          "tooltip" : "{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}} > {{cell(Next_Stage_1.result, 0, \"Expected\").asString()}}"
         },
         "type" : "text"
       },
@@ -1189,23 +1154,23 @@
           "content" : {
             "displayTemplate" : "{{cell(IdDetails_1.result, 0, \"source\").asString()}} {{coalesce(cell(field_type_name_1.selection, 0, \"field_type_name\"),cell(field_type_name_1.result, 0, \"field_type_name\")).asString()}} Lifecycle"
           },
-          "fontSize" : 16,
+          "fontSize" : 18,
           "showActionMenu" : true,
           "textAlignment" : "left",
-          "textColor" : "#091A3E"
+          "textColor" : "#FFFFFF"
         },
         "type" : "text"
       },
       "text_5" : {
         "parameters" : {
           "content" : {
-            "displayTemplate" : "{{cell(IdDetails_1.result, 0, \"Trimmed\").asString()}}"
+            "displayTemplate" : "{{cell(IdDetails_1.result, 0, \"sfal_short\").asString()}}"
           },
           "fontSize" : 12,
           "showActionMenu" : true,
           "textAlignment" : "left",
           "textColor" : "#091A3E",
-          "tooltip" : "{{cell(IdDetails_1.result, 0, \"TypeHistory\").asString()}}"
+          "tooltip" : "{{cell(IdDetails_1.result, 0, \"sfal_full\").asString()}}"
         },
         "type" : "text"
       },
@@ -1336,95 +1301,6 @@
               }
             }
           },
-          "applyConditionalFormatting" : true
-        },
-        "type" : "chart"
-      },
-      "chart_34" : {
-        "parameters" : {
-          "max" : 100,
-          "legend" : {
-            "showHeader" : true,
-            "show" : false,
-            "position" : "right-top",
-            "inside" : false
-          },
-          "tooltip" : {
-            "showBinLabel" : true,
-            "measures" : [
-              "sum_days_in_last_state"
-            ],
-            "showNullValues" : false,
-            "showPercentage" : true,
-            "customText" : "Record has been in current status for  [sum_days_in_last_state] days compared to the average time in that status of {{cell(Avg_Days_in_Last_Sta_1.result, 0, \"avg_days_in_last_state\").asString()}}",
-            "showDimensions" : true,
-            "showMeasures" : false,
-            "customizeTooltip" : true,
-            "dimensions" : ""
-          },
-          "visualizationType" : "flatgauge",
-          "exploreLink" : true,
-          "medium" : 33,
-          "title" : {
-            "fontSize" : 14,
-            "subtitleFontSize" : 11,
-            "label" : "",
-            "align" : "center",
-            "subtitleLabel" : ""
-          },
-          "trellis" : {
-            "flipLabels" : false,
-            "showGridLines" : true,
-            "size" : [
-              100,
-              100
-            ],
-            "enable" : false,
-            "type" : "x",
-            "parameters" : { },
-            "chartsPerLine" : 4
-          },
-          "colors" : {
-            "mediumColor2" : "#F29946",
-            "mediumColor1" : "#FED444",
-            "lowColor1" : "#F71979",
-            "lowColor2" : "#CC203D",
-            "highColor1" : "#7BDE4E",
-            "highColor2" : "#169913"
-          },
-          "columnMap" : {
-            "trellis" : [ ],
-            "plots" : [
-              "sum_days_in_last_state"
-            ]
-          },
-          "high" : 66,
-          "showActionMenu" : true,
-          "min" : 0,
-          "valueType" : "compactNumber",
-          "theme" : "wave",
-          "step" : "Days_in_Current_Stat_1",
-          "referenceLines" : [
-            {
-              "color" : "#0D33B6",
-              "label" : {
-                "data" : {
-                  "displayTemplate" : "Org Average [avg_days_in_last_state]",
-                  "sourceType" : "result",
-                  "step" : "Avg_Days_in_Last_Sta_1"
-                },
-                "type" : "dynamic"
-              },
-              "value" : {
-                "data" : {
-                  "field" : "avg_days_in_last_state",
-                  "sourceType" : "result",
-                  "step" : "Avg_Days_in_Last_Sta_1"
-                },
-                "type" : "dynamic"
-              }
-            }
-          ],
           "applyConditionalFormatting" : true
         },
         "type" : "chart"

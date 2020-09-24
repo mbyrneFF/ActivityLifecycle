@@ -1,4 +1,6 @@
 {
+  "isDeletable": true,
+  "longRunningAlertInMins": "",
   "notificationLevel": "",
   "workflowDefinition": {
     "sfal_account_history_filter": {
@@ -16,9 +18,7 @@
         "fields": [
           {"name": "AccountId"},
           {"name": "CaseId"},
-          {"name": "OpportunityId"},
-          {"name": "OldValue"},
-          {"name": "NewValue"}
+          {"name": "OpportunityId"}
         ]
       }
     },
@@ -65,16 +65,7 @@
             "saqlExpression": "case when daysBetween(toDate('CreatedDate_sec_epoch'), now()) == 0 then \"[0d]\" else\n\n\" [\" + \nnumber_to_string(daysBetween(toDate('CreatedDate_sec_epoch'), now()), \"####\") + \"d]\"\n\nend",
             "label": "now_date_to_create_date_epoch_days_as_string",
             "type": "Text"
-          }
-        ]
-      }
-    },
-    "sfal_generate_row_history_lines": {
-      "action": "computeExpression",
-      "parameters": {
-        "source": "sfal_generate_row_history",
-        "mergeWithSource": true,
-        "computedFields": [
+          },
           {
             "saqlExpression": "case when 'OldValue' is null then \"None\" else 'OldValue' end",
             "name": "OldValues",
@@ -85,12 +76,6 @@
             "saqlExpression": "case when 'NewValue' is null then \"None\" else 'NewValue' end",
             "name": "NewValues",
             "label": "NewValues",
-            "type": "Text"
-          },
-          {
-            "name": "days_in_state_as_string",
-            "saqlExpression": "case when 'days_in_state' == 0 then \"[0d]\" else \n\" [\" + number_to_string('days_in_state',\"####\") + \"d]\" end",
-            "label": "days_in_state_as_string",
             "type": "Text"
           }
         ]
@@ -178,33 +163,24 @@
           "name": "CreatedDate",
           "direction": "asc"
         }],
-        "source": "sfal_generate_row_history_lines",
+        "source": "sfal_generate_row_history",
         "computedFields": [
           {
             "expression": {
               "default": "FALSE",
-              "saqlExpression": "case when previous('TypeHistory') is null then 'OldValues' + \" > \" + 'NewValues' else previous('TypeHistory') + \" > \" + 'NewValues' end",
+              "saqlExpression": "case when previous('sfal_full') is null then 'OldValues' + \" > \" + 'NewValues' else previous('sfal_full') + \" > \" + 'NewValues' end",
               "type": "Text"
             },
-            "name": "TypeHistory",
-            "label": "TypeHistory"
+            "name": "sfal_full",
+            "label": "sfal_full"
           },
           {
             "expression": {
-              "saqlExpression": "case when previous('sfal_short_description') is null then 'OldValues' + \" > \" + 'NewValues' + 'days_in_state_as_string'\n\nelse previous('sfal_short_description') + \" > \" + 'NewValues' + 'days_in_state_as_string' end",
+              "saqlExpression": "(case when len((case when previous('sfal_short') is null then 'OldValues' + \" > \" + 'NewValues' else previous('sfal_short') + \" > \" + 'NewValues' end)) < 100 then (case when previous('sfal_short') is null then 'OldValues' + \" > \" + 'NewValues' else previous('sfal_short') + \" > \" + 'NewValues' end) else \"...\" + substr((case when previous('sfal_short') is null then 'OldValues' + \" > \" + 'NewValues' else previous('sfal_short') + \" > \" + 'NewValues' end),len((case when previous('sfal_short') is null then 'OldValues' + \" > \" + 'NewValues' else previous('sfal_short') + \" > \" + 'NewValues' end))-100,len((case when previous('sfal_short') is null then 'OldValues' + \" > \" + 'NewValues' else previous('sfal_short') + \" > \" + 'NewValues' end))) end)",
               "type": "Text"
             },
-            "name": "sfal_short_description",
-            "label": "sfal_short_description"
-          },
-          {
-            "expression": {
-              "default": "FALSE",
-              "saqlExpression": "case when previous('sfal_long_description') is null then 'OldValues' + \" > \" + 'NewValues' else previous('sfal_long_description') + \" > \" + 'NewValues' end",
-              "type": "Text"
-            },
-            "name": "sfal_long_description",
-            "label": "sfal_long_description"
+            "name": "sfal_short",
+            "label": "sfal_short"
           }
         ]
       }
@@ -351,7 +327,7 @@
         "partitionBy": ["partition"],
         "orderBy": [{
           "name": "RowNumber",
-          "direction": "asc"
+          "direction": "desc"
         }],
         "source": "sfal_generate_row_history_intermediate",
         "computedFields": [{
@@ -422,35 +398,12 @@
       }
     }
   },
-  "_type": "dataflow",
-  "MasterLabel": "ActivityLifecycle",
-  "nextRun": "2020-09-23T14:00:00.000Z",
-  "frequency": "hour",
-  "WorkflowStatus": "Inactive",
-  "isDeletable": true,
-  "longRunningAlertInMins": "",
-  "scheduleAttributes": {
-    "scheduleType": "hourly",
-    "hourlyInterval": 1,
-    "timeZone": "Europe/London",
-    "startTime": {
-      "hour": 0,
-      "minute": 0
-    },
-    "daysOfWeek": [
-      "Sunday",
-      "Monday",
-      "Tuesday",
-      "Wednesday",
-      "Thursday",
-      "Friday",
-      "Saturday"
-    ]
-  },
   "DataflowType": "USER",
-  "name": "ActivityLifecycle",
-  "RefreshFrequencySec": 86400,
-  "interval": 1,
+  "_type": "dataflow",
+  "name": "Activity_Lifecycle_2",
+  "MasterLabel": "Activity Lifecycle 2",
   "_url": "/insights/internal_api/v1.0/esObject/workflow//json",
-  "_uid": ""
+  "_uid": "",
+  "nextRun": "",
+  "WorkflowStatus": "Inactive"
 }

@@ -3,5 +3,8 @@
   "label" : "Activity Lifecycle",
   "description" : null,
   "featuredAssets" : { },
-  "shares" : [ ]
+  "shares": [{
+"accessType": "View",
+"shareType": "Organization"
+}]
 }

@@ -66,12 +66,6 @@
     "templateBadge" : {
       "name" : "default.png"
     },
-    "templatePreviews" : [
-      {
-        "name" : "sfal_preview",
-        "label" : "Salesforce Activity Lifecycle",
-        "description" : "Turn changes to Salesforce records into easily digestible information."
-      }
-    ]
+    "templatePreviews" : [ ]
   }
 }
