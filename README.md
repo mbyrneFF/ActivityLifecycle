@@ -1,4 +1,4 @@
-# Activiry Lifecycle
+# Activity Lifecycle
 
 Turn change history on Salesforce records into easily digestible insights
 
